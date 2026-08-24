@@ -195,7 +195,12 @@ final class HomeController: UIViewController, UITableViewDataSource, UITableView
     let bannerHeight = (view.bounds.width - 40) * 224 / 670
     let header = HomeTopHeader(
       frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: bannerHeight + 112))
-    header.configure(users: AppRepository.shared.visibleUsers())
+    // Keep the initial four story users fixed; later registrations or data changes
+    // must not add people to this row.
+    let initialStoryIDs = Set(["emma", "lucas", "sofia", "julian"])
+    let storyUsers = AppRepository.shared.visibleUsers()
+      .filter { initialStoryIDs.contains($0.id) }
+    header.configure(users: storyUsers)
     header.aiAction = { [weak self] in
       guard AppRepository.shared.isAuthenticated else {
         self?.loginRequired()
@@ -270,7 +275,11 @@ final class HomeController: UIViewController, UITableViewDataSource, UITableView
     guard category != value else { return }
     category = value
     posts = AppRepository.shared.visiblePosts(category: value)
-    table.reloadSections(IndexSet(integer: 0), with: .none)
+    // Refresh only the post list without animating/rebuilding the category header.
+    UIView.performWithoutAnimation {
+      table.reloadData()
+      table.layoutIfNeeded()
+    }
   }
   private func loginRequired() {
     presentSignInRequired()

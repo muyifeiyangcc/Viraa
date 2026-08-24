@@ -2,12 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Allow Viraa to take photos for profiles, posts, meets, and chat messages.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Allow Viraa to record voice messages.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Allow Viraa to choose photos and videos for profiles, posts, meets, and chat messages.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

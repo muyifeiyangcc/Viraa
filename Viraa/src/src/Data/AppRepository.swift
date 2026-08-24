@@ -95,7 +95,7 @@ private let aiFallbackReply =
 final class AppRepository {
   static let shared = AppRepository()
   private let defaults = UserDefaults.standard
-  private let snapshotKey = "viraa.snapshot.v3"
+  private let snapshotKey = "viraa.snapshot.v9"
   private(set) var users: [User] = [], posts: [Post] = [], meets: [Meet] = [],
     conversations: [Conversation] = [], messages: [ChatMessage] = [], reports: [ReportRecord] = [],
     aiMessages: [AIMessage] = []
@@ -118,7 +118,16 @@ final class AppRepository {
   let difficulties = ["Beginner Friendly", "Moderate", "Experienced Only"]
   let hostMeetCost = 300, aiMessageCost = 10
 
-  private init() { reloadFromDisk() }
+  private init() {
+    // Drop the older demo snapshot so the CSV-backed catalog is used on the next launch.
+    defaults.removeObject(forKey: "viraa.snapshot.v3")
+    defaults.removeObject(forKey: "viraa.snapshot.v4")
+    defaults.removeObject(forKey: "viraa.snapshot.v5")
+    defaults.removeObject(forKey: "viraa.snapshot.v6")
+    defaults.removeObject(forKey: "viraa.snapshot.v7")
+    defaults.removeObject(forKey: "viraa.snapshot.v8")
+    reloadFromDisk()
+  }
 
   func reloadFromDisk() {
     state = .loading
@@ -563,50 +572,154 @@ final class AppRepository {
     }
   }
   private func seed() {
+    defaults.removeObject(forKey: "presetInvalidated")
+    func imageAsset(_ filename: String, id: String) -> MediaAsset {
+      MediaAsset(id: id, kind: .image, relativePath: filename, createdAt: Date())
+    }
+    func videoAsset(_ filename: String, id: String) -> MediaAsset {
+      MediaAsset(id: id, kind: .video, relativePath: filename, createdAt: Date())
+    }
+
+    // The preset login is a separate fresh account, not one of the CSV users.
     let preset = User(
       id: "preset", email: "123@gmail.com", name: "Maya Rivers",
-      bio: "Chasing cold water and quiet trails.", location: "Oregon", gender: .madam,
-      isActive: true)
-    let theo = User(
-      id: "theo", email: "theo@example.com", name: "Theo Grant", bio: "Trail maps and open water.",
-      location: "North Trail", gender: .man, isActive: true)
-    let nia = User(
-      id: "nia", email: "nia@example.com", name: "Nia Brooks", bio: "Weekend swimmer.",
-      location: "Opal Pool", gender: .madam, isActive: true)
-    users = [preset, theo, nia]
+      bio: "Chasing clear water and quiet trails.", location: "Oregon", gender: .madam,
+      isActive: true, avatar: nil)
+    let emma = User(
+      id: "emma", email: "emma@example.com", name: "Emma Vance",
+      bio: "Chasing clear water and quiet trails.", location: "Emerald Basin", gender: .madam,
+      isActive: true,
+      avatar: imageAsset("5299b264ee23ae35173c908850f78d09.jpg", id: "avatar-emma"))
+    let lucas = User(
+      id: "lucas", email: "lucas@example.com", name: "Lucas Miller",
+      bio: "Weekend walks to hidden cascades.", location: "Cedar Falls", gender: .man,
+      isActive: true,
+      avatar: imageAsset("9da852647572c52d808708502bf2107a.jpg", id: "avatar-lucas"))
+    let sofia = User(
+      id: "sofia", email: "sofia@example.com", name: "Sofia Rossi",
+      bio: "Always looking for a cool swimming hole.", location: "Summer Creek", gender: .madam,
+      isActive: true,
+      avatar: imageAsset("c117447f681240f8beb609b8ee67880b.jpg", id: "avatar-sofia"))
+    let julian = User(
+      id: "julian", email: "julian@example.com", name: "Julian Weber",
+      bio: "Deep water and canyon days.", location: "Blue Canyon", gender: .man,
+      isActive: true,
+      avatar: imageAsset("5359174f691281e86593e61dbff70b97.jpg", id: "avatar-julian"))
+    let clara = User(
+      id: "clara", email: "clara@example.com", name: "Clara Dupont",
+      bio: "Finding the best current and the safest line.", location: "Rapid Gorge", gender: .madam,
+      isActive: true,
+      avatar: imageAsset("19be25819ca5dabb67532a380bc6f040.jpg", id: "avatar-clara"))
+    let oliver = User(
+      id: "oliver", email: "oliver@example.com", name: "Oliver Smith",
+      bio: "Canyoneering, rivers, and big challenges.", location: "Canyon Passage", gender: .man,
+      isActive: true,
+      avatar: imageAsset("b7973f00724256ece18689dff9771795.jpg", id: "avatar-oliver"))
+    let liam = User(
+      id: "liam", email: "liam@example.com", name: "Liam Clarke",
+      bio: "Early starts and peaceful water.", location: "Mirror Lake", gender: .man,
+      isActive: true,
+      avatar: imageAsset("fe1c2fdf912c80caf73eafc47ac3fd8e.jpg", id: "avatar-liam"))
+    let hannah = User(
+      id: "hannah", email: "hannah@example.com", name: "Hannah Fischer",
+      bio: "Turquoise lakes and long paddles.", location: "Alpine Lake", gender: .madam,
+      isActive: true,
+      avatar: imageAsset("53185ecba92e9ec45c6c78d2332c7c5d.jpg", id: "avatar-hannah"))
+    let csvUsers = [emma, lucas, sofia, julian, clara, oliver, liam, hannah]
+    users = [preset] + csvUsers
+
+    let now = Date()
     posts = [
       Post(
-        id: "post1", authorID: "theo", title: "Behind the cedar veil",
+        id: "drop-emma", authorID: emma.id, title: "Behind the cedar veil",
         body: "A quiet two-mile climb, cold mist, and the clearest pool at the base.",
-        category: "Waterfall Hike", difficulty: "Moderate", location: "Oregon", createdAt: Date(),
-        likedBy: ["nia"],
-        comments: [
-          Comment(
-            id: "c1", postID: "post1", authorID: "nia", text: "The water was beautiful today.",
-            createdAt: Date())
-        ])
+        category: "Waterfall Hike", difficulty: "Moderate", location: "Cedar Falls",
+        createdAt: now.addingTimeInterval(-7200), likedBy: [],
+        comments: [Comment(
+          id: "comment-emma-1", postID: "drop-emma", authorID: lucas.id,
+          text: "Pure paradise here!", createdAt: now.addingTimeInterval(-3600))],
+        media: [imageAsset("1ef88d48e231433469a0ccf933a8dd28.jpg", id: "media-drop-emma")]),
+      Post(
+        id: "drop-lucas", authorID: lucas.id, title: "Easy cascade trail for weekends",
+        body: "A gentle 15-minute walk to the waterfall platform with scenic views along the stream.",
+        category: "Waterfall Hike", difficulty: "Beginner Friendly", location: "Cascade Trail",
+        createdAt: now.addingTimeInterval(-14400), likedBy: [], comments: [],
+        media: [imageAsset("f83c02899f6977ebec3e8efcadc022f2.jpg", id: "media-drop-lucas")]),
+      Post(
+        id: "drop-sofia", authorID: sofia.id, title: "Finding the secret summer cooling spot",
+        body: "A 30-minute walk along the stream leads to this natural pool with crystal-clear water.",
+        category: "Swimming Hole", difficulty: "Beginner Friendly", location: "Summer Creek",
+        createdAt: now.addingTimeInterval(-21600), likedBy: [],
+        comments: [Comment(
+          id: "comment-sofia-1", postID: "drop-sofia", authorID: emma.id,
+          text: "Stunning hidden spot!", createdAt: now.addingTimeInterval(-10800))],
+        media: [imageAsset("758a9898a4dc442f4045c5fa4e6d4ee1.jpg", id: "media-drop-sofia")]),
+      Post(
+        id: "drop-julian", authorID: julian.id, title: "Deep canyon cliff plunge pool",
+        body: "Requires light climbing to reach; the water is very deep and great for experienced swimmers.",
+        category: "Swimming Hole", difficulty: "Experienced Only", location: "Blue Canyon",
+        createdAt: now.addingTimeInterval(-28800), likedBy: [],
+        comments: [Comment(
+          id: "comment-julian-1", postID: "drop-julian", authorID: clara.id,
+          text: "Looks super deep!", createdAt: now.addingTimeInterval(-14400))],
+        media: [videoAsset("256c7e5a18767c353f8663ac70c62977.mp4", id: "media-drop-julian")]),
+      Post(
+        id: "drop-clara", authorID: clara.id, title: "Thrilling moments tackling the rapids",
+        body: "This white-water rafting trip was super exciting with full guidance from instructors.",
+        category: "River Adventure", difficulty: "Experienced Only", location: "Rapid Gorge",
+        createdAt: now.addingTimeInterval(-36000), likedBy: [], comments: [],
+        media: [imageAsset("bb30e84c3ee29eea30dba41a2692042d.jpg", id: "media-drop-clara")]),
+      Post(
+        id: "drop-oliver", authorID: oliver.id, title: "Extreme canyon river passage",
+        body: "Rushing currents involving cliff jumps and upstream canyoneering; experts only.",
+        category: "River Adventure", difficulty: "Experienced Only", location: "Canyon Passage",
+        createdAt: now.addingTimeInterval(-43200), likedBy: [],
+        comments: [Comment(
+          id: "comment-oliver-1", postID: "drop-oliver", authorID: hannah.id,
+          text: "Truly next level!", createdAt: now.addingTimeInterval(-21600))],
+        media: [videoAsset("a8ac1e73d25ced7a5e91466037537788_720w.mp4", id: "media-drop-oliver")]),
+      Post(
+        id: "drop-liam", authorID: liam.id, title: "Peaceful morning lake kayaking",
+        body: "At 5 AM the lake surface is like a mirror, enjoying peaceful alone time kayaking.",
+        category: "River Adventure", difficulty: "Beginner Friendly", location: "Mirror Lake",
+        createdAt: now.addingTimeInterval(-50400), likedBy: [], comments: [],
+        media: [imageAsset("c8978e0ca9e87f9cadf09b139938b3c7.jpg", id: "media-drop-liam")]),
+      Post(
+        id: "drop-hannah", authorID: hannah.id, title: "Alpine lake paddle expedition",
+        body: "Paddling around an alpine glacial lake with stunning turquoise water.",
+        category: "River Adventure", difficulty: "Moderate", location: "Alpine Lake",
+        createdAt: now.addingTimeInterval(-57600), likedBy: [], comments: [],
+        media: [imageAsset("d7d4227c0b7126151c3c86e9ba1404b4.jpg", id: "media-drop-hannah")]),
     ]
     meets = [
       Meet(
-        id: "meet1", hostID: "nia", title: "Sunday swim at Opal Pool",
-        date: Date().addingTimeInterval(259200), capacity: 8, participantIDs: ["theo", "nia"],
-        meetingPoint: "North Trail parking", category: "Swimming Hole", cost: hostMeetCost)
+        id: "meet-emerald-basin", hostID: emma.id, title: "Morning Dip at Emerald Basin",
+        date: now.addingTimeInterval(259200), capacity: 8,
+        participantIDs: [emma.id, sofia.id, julian.id],
+        meetingPoint: "Emerald Basin North Trail Parking", category: "Swimming Hole",
+        cost: hostMeetCost,
+        cover: imageAsset("2ba5337204ad54106c0fa1112a2c8a01.jpg", id: "cover-emerald-basin")),
+      Meet(
+        id: "meet-blue-lake", hostID: liam.id, title: "Sunset Kayak & Swim Party",
+        date: now.addingTimeInterval(345600), capacity: 6,
+        participantIDs: [liam.id, hannah.id, clara.id, oliver.id],
+        meetingPoint: "Blue Lake West Public Launch Ramp", category: "River Adventure",
+        cost: hostMeetCost,
+        cover: imageAsset("c3a6383cdfa9d18e5deb0f00868998a2.jpg", id: "cover-blue-lake")),
     ]
-    conversations = [
-      Conversation(id: "chat1", participantIDs: ["preset", "theo"], unreadByUser: ["preset": 1])
-    ]
-    messages = [
-      ChatMessage(
-        id: "m1", conversationID: "chat1", senderID: "theo", kind: .text,
-        body: "Is Opal Pool still good after the rain?", createdAt: Date())
-    ]
-    walletsByUser = [
-      "preset": Wallet(coins: 0, diamonds: 0, freeQuestions: 3),
-      "theo": Wallet(coins: 0, diamonds: 0, freeQuestions: 3),
-      "nia": Wallet(coins: 0, diamonds: 0, freeQuestions: 3),
-    ]
-    followingByUser = ["preset": [], "theo": ["preset"], "nia": []]
-    blockedByUser = ["preset": [], "theo": [], "nia": []]
+    conversations = []
+    messages = []
+    aiMessages = []
+    reports = []
+    walletsByUser = Dictionary(uniqueKeysWithValues: users.map {
+      ($0.id, Wallet(coins: 0, diamonds: 0, freeQuestions: 3))
+    })
+    followingByUser = Dictionary(uniqueKeysWithValues: users.map { ($0.id, Set<String>()) })
+    // Two CSV users initially follow the fresh preset account. The preset account
+    // itself starts with no Following entries.
+    let initialFollowers = csvUsers.shuffled().prefix(2)
+    initialFollowers.forEach { followingByUser[$0.id] = [preset.id] }
+    blockedByUser = Dictionary(uniqueKeysWithValues: users.map { ($0.id, Set<String>()) })
     currentUserID = nil
     processedTransactionIDs = []
     presetFollowingInitialized = false

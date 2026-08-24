@@ -223,9 +223,9 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Viraa/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Take a profile photo to personalize your account.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record voice messages in chats.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose photos and videos to share with other explorers.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Viraa needs access to your camera to take photos, record videos of your wild water adventures, and update your profile picture.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Viraa needs access to your microphone to record ambient sound while capturing videos of your outdoor water activities and to send voice messages in chats.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow Viraa to choose photos and videos for profiles, posts, meets, and chat messages.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -265,9 +265,9 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Viraa/Info.plist;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Take a profile photo to personalize your account.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Record voice messages in chats.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Choose photos and videos to share with other explorers.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Viraa needs access to your camera to take photos, record videos of your wild water adventures, and update your profile picture.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Viraa needs access to your microphone to record ambient sound while capturing videos of your outdoor water activities and to send voice messages in chats.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Allow Viraa to choose photos and videos for profiles, posts, meets, and chat messages.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

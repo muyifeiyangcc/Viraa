@@ -1,6 +1,7 @@
 @preconcurrency import AVFoundation
 import AVKit
 @preconcurrency import PhotosUI
+import SnapKit
 import UIKit
 
 @MainActor
@@ -14,9 +15,15 @@ final class MediaStore {
     FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
       .appendingPathComponent(folderName, isDirectory: true)
   }
-  func url(for asset: MediaAsset) -> URL { directory.appendingPathComponent(asset.relativePath) }
+  func url(for asset: MediaAsset) -> URL {
+    let stored = directory.appendingPathComponent(asset.relativePath)
+    if FileManager.default.fileExists(atPath: stored.path) { return stored }
+    return bundledURL(for: asset) ?? stored
+  }
   func exists(_ asset: MediaAsset) -> Bool {
-    FileManager.default.fileExists(atPath: url(for: asset).path)
+    FileManager.default.fileExists(atPath: directory.appendingPathComponent(asset.relativePath).path)
+      || bundledURL(for: asset) != nil
+      || (asset.kind == .image && bundledImage(for: asset) != nil)
   }
   func importFile(_ source: URL, kind: MediaKind, duration: TimeInterval? = nil) throws
     -> MediaAsset
@@ -41,7 +48,9 @@ final class MediaStore {
   }
   func thumbnail(for asset: MediaAsset) -> UIImage? {
     guard exists(asset) else { return nil }
-    if asset.kind == .image { return UIImage(contentsOfFile: url(for: asset).path) }
+    if asset.kind == .image {
+      return UIImage(contentsOfFile: url(for: asset).path) ?? bundledImage(for: asset)
+    }
     if asset.kind == .video {
       let generator = AVAssetImageGenerator(asset: AVAsset(url: url(for: asset)))
       generator.appliesPreferredTrackTransform = true
@@ -49,6 +58,20 @@ final class MediaStore {
       return UIImage(cgImage: image)
     }
     return nil
+  }
+  private func bundledImage(for asset: MediaAsset) -> UIImage? {
+    let name = URL(fileURLWithPath: asset.relativePath).deletingPathExtension().lastPathComponent
+    return UIImage(named: name) ?? UIImage(named: asset.relativePath)
+  }
+  private func bundledURL(for asset: MediaAsset) -> URL? {
+    let path = URL(fileURLWithPath: asset.relativePath)
+    return Bundle.main.url(
+      forResource: path.deletingPathExtension().lastPathComponent,
+      withExtension: path.pathExtension,
+      subdirectory: "file")
+      ?? Bundle.main.url(
+        forResource: path.deletingPathExtension().lastPathComponent,
+        withExtension: path.pathExtension)
   }
   private func defaultExtension(_ kind: MediaKind) -> String {
     switch kind {
@@ -228,11 +251,30 @@ final class MediaPreviewController: UIViewController {
     hidesBottomBarWhenPushed = true
   }
   required init?(coder: NSCoder) { fatalError() }
+  override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    navigationItem.hidesBackButton = true
+    navigationItem.leftBarButtonItem = nil
+    navigationController?.setNavigationBarHidden(true, animated: false)
+  }
   override func viewDidLoad() {
     super.viewDidLoad()
     view.backgroundColor = .black
-    navigationItem.leftBarButtonItem = UIFactory.backBarButton(
-      target: self, action: #selector(back))
+    // The system player is presented full-screen, so the navigation bar may be hidden.
+    // Keep an explicit white back control above the player content.
+    navigationController?.setNavigationBarHidden(true, animated: false)
+    let backButton = UIButton(type: .system)
+    backButton.tintColor = .white
+    backButton.setImage(
+      UIImage(named: "image/back")?.withRenderingMode(.alwaysTemplate), for: .normal)
+    backButton.addTarget(self, action: #selector(back), for: .touchUpInside)
+    backButton.accessibilityLabel = "Back"
+    view.addSubview(backButton)
+    backButton.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(16)
+      $0.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+      $0.width.height.equalTo(44)
+    }
     guard MediaStore.shared.exists(asset) else {
       showMessage(
         "Media Unavailable", "This media file is missing. You can remove it and choose another.")
@@ -255,6 +297,7 @@ final class MediaPreviewController: UIViewController {
       image.frame = view.bounds
       image.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     }
+    view.bringSubviewToFront(backButton)
   }
   @objc private func back() { navigationController?.popViewController(animated: true) }
 }
