@@ -1,0 +1,65 @@
+PODS:
+  - IQKeyboardCore (1.0.5)
+  - IQKeyboardManagerSwift (7.2.0):
+    - IQKeyboardManagerSwift/Appearance (= 7.2.0)
+    - IQKeyboardManagerSwift/Core (= 7.2.0)
+    - IQKeyboardManagerSwift/IQKeyboardReturnKeyHandler (= 7.2.0)
+    - IQKeyboardManagerSwift/IQKeyboardToolbarManager (= 7.2.0)
+    - IQKeyboardManagerSwift/IQTextView (= 7.2.0)
+    - IQKeyboardManagerSwift/Resign (= 7.2.0)
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/Appearance (7.2.0):
+    - IQKeyboardManagerSwift/Core
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/Core (7.2.0):
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/IQKeyboardReturnKeyHandler (7.2.0):
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/IQKeyboardToolbarManager (7.2.0):
+    - IQKeyboardManagerSwift/Core
+    - IQKeyboardManagerSwift/IQKeyboardToolbarManager/IQKeyboardToolbar (= 7.2.0)
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/IQKeyboardToolbarManager/IQKeyboardToolbar (7.2.0):
+    - IQKeyboardManagerSwift/Core
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/IQTextView (7.2.0):
+    - IQKeyboardManagerSwift/IQKeyboardToolbarManager/IQKeyboardToolbar
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardManagerSwift/Resign (7.2.0):
+    - IQKeyboardManagerSwift/Core
+    - IQKeyboardNotification (= 1.0.3)
+    - IQTextInputViewNotification (= 1.0.5)
+  - IQKeyboardNotification (1.0.3)
+  - IQTextInputViewNotification (1.0.5):
+    - IQKeyboardCore (= 1.0.5)
+  - SnapKit (5.7.1)
+
+DEPENDENCIES:
+  - IQKeyboardManagerSwift (~> 7.2)
+  - SnapKit (~> 5.7)
+
+SPEC REPOS:
+  trunk:
+    - IQKeyboardCore
+    - IQKeyboardManagerSwift
+    - IQKeyboardNotification
+    - IQTextInputViewNotification
+    - SnapKit
+
+SPEC CHECKSUMS:
+  IQKeyboardCore: 28c8bf3bcd8ba5aa1570b318cbc4da94b861711e
+  IQKeyboardManagerSwift: 12d6ae3632ef744ccd033c048b566af13cc10d49
+  IQKeyboardNotification: d7382c4466c5a5adef92c7452ebf861b36050088
+  IQTextInputViewNotification: 4381fb828881983205fbee38f17da8a9fe2e835c
+  SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
+
+PODFILE CHECKSUM: 25a96897dad93e41d758166f07d528f017bdf8a9
+
+COCOAPODS: 1.16.2

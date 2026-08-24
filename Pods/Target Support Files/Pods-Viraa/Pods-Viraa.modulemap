@@ -1,0 +1,6 @@
+framework module Pods_Viraa {
+  umbrella header "Pods-Viraa-umbrella.h"
+
+  export *
+  module * { export * }
+}
