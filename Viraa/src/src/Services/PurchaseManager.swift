@@ -9,14 +9,19 @@ final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate
     private var request: SKProductsRequest?, storeProducts: [String: SKProduct] = [:]
     private var requestTimeout: DispatchWorkItem?
     private var requestGeneration = 0
-    // Single product catalog. Add the four future products here when their IDs are available.
+    // Single production catalog. The reward values are the virtual currency amounts
+    // configured for each App Store consumable product.
     private let configurations: [PurchaseConfiguration] = [
-      .init(productID: "lvbsvhxcgcrvesor", reward: 400, usdPrice: "$0.99"),
-      .init(productID: "dxismgcwewhrtezo", reward: 800, usdPrice: "$1.99"),
-      .init(productID: "khtxlcejaxmqcsra", reward: 2450, usdPrice: "$4.99"),
-      .init(productID: "yadwwvxspgxwlndb", reward: 5150, usdPrice: "$9.99"),
-      .init(productID: "qnrcuelbtiuflyky", reward: 6400, usdPrice: "$12.99"),
-      .init(productID: "ymohxnvpkqxutvab", reward: 10800, usdPrice: "$19.99"),
+      .init(productID: "nlxecozepclyjkuf", reward: 400, usdPrice: "$0.99"),
+      .init(productID: "yoyhybhnduzghsyh", reward: 800, usdPrice: "$1.99"),
+      .init(productID: "iijbszomgxgnknfc", reward: 2450, usdPrice: "$4.99"),
+      .init(productID: "ncibaxpayfnkwzka", reward: 5150, usdPrice: "$9.99"),
+      .init(productID: "garkhgfhgdwirlsw", reward: 6400, usdPrice: "$12.99"),
+      .init(productID: "kkbsttltxgscdynq", reward: 10800, usdPrice: "$19.99"),
+      .init(productID: "lsigilbhsxzcjhnl", reward: 14900, usdPrice: "$24.99"),
+      .init(productID: "rakzwznmslsbxbvn", reward: 29400, usdPrice: "$49.99"),
+      .init(productID: "xahilphocmzhfsci", reward: 39500, usdPrice: "$79.99"),
+      .init(productID: "vawcpyjtyevyrhbd", reward: 63700, usdPrice: "$99.99"),
     ]
     private var rewards: [String: Int] { Dictionary(uniqueKeysWithValues: configurations.map { ($0.productID, $0.reward) }) }
     private var configurationsByID: [String: PurchaseConfiguration] {
