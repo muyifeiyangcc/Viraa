@@ -95,7 +95,7 @@ private let aiFallbackReply =
 final class AppRepository {
   static let shared = AppRepository()
   private let defaults = UserDefaults.standard
-  private let snapshotKey = "viraa.snapshot.v9"
+  private let snapshotKey = "viraa.snapshot.v11"
   private(set) var users: [User] = [], posts: [Post] = [], meets: [Meet] = [],
     conversations: [Conversation] = [], messages: [ChatMessage] = [], reports: [ReportRecord] = [],
     aiMessages: [AIMessage] = []
@@ -114,9 +114,19 @@ final class AppRepository {
   var following: Set<String> { followingByUser[currentUserID ?? "guest"] ?? [] }
   var blocked: Set<String> { blockedByUser[currentUserID ?? "guest"] ?? [] }
   var eulaAccepted: Bool { defaults.bool(forKey: "eulaAccepted") }
-  let categories = ["All", "Waterfall Hike", "Swimming Hole", "River Adventure"]
-  let difficulties = ["Beginner Friendly", "Moderate", "Experienced Only"]
+  let categories = ["All", "Waterfall Hike", "Swimming Hole", "River Adventures", "Lake Escapes"]
+  let difficulties = ["Beginner Friendly", "Moderate", "Experienced Only", "Expert"]
   let hostMeetCost = 300, aiMessageCost = 10
+
+  var hasConfirmedPaidAIUse: Bool {
+    guard let uid = currentUserID else { return false }
+    return defaults.bool(forKey: "viraa.aiPaidConfirmation.\(uid)")
+  }
+
+  func markPaidAIUseConfirmed() {
+    guard let uid = currentUserID else { return }
+    defaults.set(true, forKey: "viraa.aiPaidConfirmation.\(uid)")
+  }
 
   private init() {
     // Drop the older demo snapshot so the CSV-backed catalog is used on the next launch.
@@ -126,6 +136,8 @@ final class AppRepository {
     defaults.removeObject(forKey: "viraa.snapshot.v6")
     defaults.removeObject(forKey: "viraa.snapshot.v7")
     defaults.removeObject(forKey: "viraa.snapshot.v8")
+    defaults.removeObject(forKey: "viraa.snapshot.v9")
+    defaults.removeObject(forKey: "viraa.snapshot.v10")
     reloadFromDisk()
   }
 
@@ -629,6 +641,12 @@ final class AppRepository {
     users = [preset] + csvUsers
 
     let now = Date()
+    let emeraldMeetDate = Calendar.current.date(
+      from: DateComponents(year: 2026, month: 10, day: 10, hour: 8, minute: 0))
+      ?? now.addingTimeInterval(259200)
+    let blueLakeMeetDate = Calendar.current.date(
+      from: DateComponents(year: 2026, month: 10, day: 18, hour: 17, minute: 30))
+      ?? now.addingTimeInterval(345600)
     posts = [
       Post(
         id: "drop-emma", authorID: emma.id, title: "Behind the cedar veil",
@@ -666,13 +684,13 @@ final class AppRepository {
       Post(
         id: "drop-clara", authorID: clara.id, title: "Thrilling moments tackling the rapids",
         body: "This white-water rafting trip was super exciting with full guidance from instructors.",
-        category: "River Adventure", difficulty: "Experienced Only", location: "Rapid Gorge",
+        category: "River Adventures", difficulty: "Experienced Only", location: "Rapid Gorge",
         createdAt: now.addingTimeInterval(-36000), likedBy: [], comments: [],
         media: [imageAsset("bb30e84c3ee29eea30dba41a2692042d.jpg", id: "media-drop-clara")]),
       Post(
         id: "drop-oliver", authorID: oliver.id, title: "Extreme canyon river passage",
         body: "Rushing currents involving cliff jumps and upstream canyoneering; experts only.",
-        category: "River Adventure", difficulty: "Experienced Only", location: "Canyon Passage",
+        category: "River Adventures", difficulty: "Expert", location: "Canyon Passage",
         createdAt: now.addingTimeInterval(-43200), likedBy: [],
         comments: [Comment(
           id: "comment-oliver-1", postID: "drop-oliver", authorID: hannah.id,
@@ -681,29 +699,29 @@ final class AppRepository {
       Post(
         id: "drop-liam", authorID: liam.id, title: "Peaceful morning lake kayaking",
         body: "At 5 AM the lake surface is like a mirror, enjoying peaceful alone time kayaking.",
-        category: "River Adventure", difficulty: "Beginner Friendly", location: "Mirror Lake",
+        category: "Lake Escapes", difficulty: "Beginner Friendly", location: "Mirror Lake",
         createdAt: now.addingTimeInterval(-50400), likedBy: [], comments: [],
         media: [imageAsset("c8978e0ca9e87f9cadf09b139938b3c7.jpg", id: "media-drop-liam")]),
       Post(
         id: "drop-hannah", authorID: hannah.id, title: "Alpine lake paddle expedition",
         body: "Paddling around an alpine glacial lake with stunning turquoise water.",
-        category: "River Adventure", difficulty: "Moderate", location: "Alpine Lake",
+        category: "Lake Escapes", difficulty: "Moderate", location: "Alpine Lake",
         createdAt: now.addingTimeInterval(-57600), likedBy: [], comments: [],
         media: [imageAsset("d7d4227c0b7126151c3c86e9ba1404b4.jpg", id: "media-drop-hannah")]),
     ]
     meets = [
       Meet(
         id: "meet-emerald-basin", hostID: emma.id, title: "Morning Dip at Emerald Basin",
-        date: now.addingTimeInterval(259200), capacity: 8,
+        date: emeraldMeetDate, capacity: 8,
         participantIDs: [emma.id, sofia.id, julian.id],
         meetingPoint: "Emerald Basin North Trail Parking", category: "Swimming Hole",
         cost: hostMeetCost,
         cover: imageAsset("2ba5337204ad54106c0fa1112a2c8a01.jpg", id: "cover-emerald-basin")),
       Meet(
         id: "meet-blue-lake", hostID: liam.id, title: "Sunset Kayak & Swim Party",
-        date: now.addingTimeInterval(345600), capacity: 6,
+        date: blueLakeMeetDate, capacity: 6,
         participantIDs: [liam.id, hannah.id, clara.id, oliver.id],
-        meetingPoint: "Blue Lake West Public Launch Ramp", category: "River Adventure",
+        meetingPoint: "Blue Lake West Public Launch Ramp", category: "Lake Escapes",
         cost: hostMeetCost,
         cover: imageAsset("c3a6383cdfa9d18e5deb0f00868998a2.jpg", id: "cover-blue-lake")),
     ]

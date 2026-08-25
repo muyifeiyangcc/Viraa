@@ -118,7 +118,7 @@ final class MainTabController: UITabBarController, UINavigationControllerDelegat
       }
       return
     }
-    if [3, 4].contains(index) && !requireLogin() { return }
+    if [1, 3, 4].contains(index) && !requireLogin() { return }
     let controllerIndex = index < 2 ? index : index - 1
     selectedIndex = controllerIndex
     previousVisualIndex = index
@@ -273,12 +273,18 @@ final class HomeController: UIViewController, UITableViewDataSource, UITableView
   }
   private func selectCategory(_ value: String) {
     guard category != value else { return }
+    let previousOffset = (table.headerView(forSection: 0) as? CategoryStrip)?.horizontalOffset ?? 0
     category = value
     posts = AppRepository.shared.visiblePosts(category: value)
     // Refresh only the post list without animating/rebuilding the category header.
     UIView.performWithoutAnimation {
       table.reloadData()
       table.layoutIfNeeded()
+    }
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let header = self.table.headerView(forSection: 0) as? CategoryStrip
+      else { return }
+      header.restore(horizontalOffset: previousOffset)
     }
   }
   private func loginRequired() {
@@ -362,6 +368,7 @@ private final class HomeTopHeader: UIView {
 private final class CategoryStrip: UIView {
   var selection: ((String) -> Void)?
   private let scroll = UIScrollView(), row = UIStackView()
+  var horizontalOffset: CGFloat { scroll.contentOffset.x }
   override init(frame: CGRect) {
     super.init(frame: frame)
     backgroundColor = .white
@@ -403,6 +410,11 @@ private final class CategoryStrip: UIView {
       button.snp.makeConstraints { $0.width.equalTo(textWidth + 28) }
       row.addArrangedSubview(button)
     }
+  }
+  func restore(horizontalOffset: CGFloat) {
+    layoutIfNeeded()
+    let maxOffset = max(0, scroll.contentSize.width - scroll.bounds.width)
+    scroll.setContentOffset(CGPoint(x: min(max(0, horizontalOffset), maxOffset), y: 0), animated: false)
   }
   @objc private func tap(_ sender: UIButton) {
     if let value = sender.accessibilityIdentifier { selection?(value) }

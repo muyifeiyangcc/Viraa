@@ -109,6 +109,11 @@ final class LoginLandingController: UIViewController {
     navigationController?.pushViewController(EmailAuthController(mode: .signIn), animated: true)
   }
   @objc private func signupTap() {
+    guard checked else {
+      showMessage(
+        "Agreement Required", "Please agree to the Terms of Service and Privacy Policy first.")
+      return
+    }
     navigationController?.pushViewController(EmailAuthController(mode: .signUp), animated: true)
   }
   @objc private func checkTap() {

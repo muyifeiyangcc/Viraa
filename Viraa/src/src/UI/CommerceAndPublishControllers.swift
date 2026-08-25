@@ -455,6 +455,7 @@ final class PublishHubController: UIViewController, MediaPickerDelegate,
     let label = UIFactory.label(title, size: 14)
     let scroll = UIScrollView()
     let row = UIStackView()
+    var selectedButton: UIButton?
     scroll.showsHorizontalScrollIndicator = false
     row.spacing = 8
     for value in values {
@@ -479,6 +480,7 @@ final class PublishHubController: UIViewController, MediaPickerDelegate,
         (value as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 13)]).width)
       button.snp.makeConstraints { $0.width.equalTo(textWidth + 28) }
       row.addArrangedSubview(button)
+      if value == selected { selectedButton = button }
     }
     scroll.addSubview(row)
     container.addSubview(label)
@@ -493,6 +495,16 @@ final class PublishHubController: UIViewController, MediaPickerDelegate,
       $0.leading.trailing.equalTo(scroll.contentLayoutGuide)
       $0.centerY.equalTo(scroll.frameLayoutGuide)
       $0.height.equalTo(34)
+    }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+      guard let selectedButton else { return }
+      container.layoutIfNeeded()
+      scroll.layoutIfNeeded()
+      let rect = selectedButton.convert(selectedButton.bounds, to: scroll)
+      let maxOffset = max(0, scroll.contentSize.width - scroll.bounds.width)
+      let centered = rect.midX - scroll.bounds.width / 2
+      scroll.setContentOffset(
+        CGPoint(x: min(max(0, centered), maxOffset), y: 0), animated: false)
     }
     return container
   }
@@ -795,9 +807,13 @@ final class PublishHubController: UIViewController, MediaPickerDelegate,
       let cost = AppRepository.shared.hostMeetCost
       guard AppRepository.shared.wallet.coins >= cost else {
         presentBottomSheet(
-          title: "Not Enough Coins", message: "Coins are insufficient. Please recharge first.",
-          primary: "OK", secondary: nil
-        ) { _ in }
+          title: "Not Enough Coins",
+          message: "You don’t have enough Coins to continue. Would you like to recharge now?",
+          primary: "Recharge", secondary: "Cancel"
+        ) { [weak self] confirmed in
+          guard confirmed else { return }
+          self?.navigationController?.pushViewController(RechargeController(), animated: true)
+        }
         return
       }
       presentBottomSheet(
@@ -929,6 +945,7 @@ final class AIChatController: UIViewController, UITextFieldDelegate {
   private let composer = UIView()
   private let field = UITextField()
   private let sendButton = UIButton(type: .system)
+  private let composerCoinLabel = UIFactory.label(size: 11, weight: .medium, color: .white)
 
   override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
 
@@ -1076,13 +1093,37 @@ final class AIChatController: UIViewController, UITextFieldDelegate {
     sendButton.tintColor = UIColor(red: 0.19, green: 0.21, blue: 0.22, alpha: 1)
     sendButton.addTarget(self, action: #selector(sendTap), for: .touchUpInside)
 
+    let balancePill = UIView()
+    balancePill.backgroundColor = UIColor(red: 0.29, green: 0.36, blue: 0.36, alpha: 0.88)
+    balancePill.layer.cornerRadius = 12
+    let balanceIcon = UIImageView(image: UIImage(named: "coin"))
+    balanceIcon.contentMode = .scaleAspectFit
+
     contentPanel.addSubview(composer)
+    contentPanel.addSubview(balancePill)
+    balancePill.addSubview(balanceIcon)
+    balancePill.addSubview(composerCoinLabel)
     composer.addSubview(field)
     composer.addSubview(sendButton)
     composer.snp.makeConstraints {
       $0.leading.trailing.equalToSuperview().inset(18)
       $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-15)
       $0.height.equalTo(54)
+    }
+    balancePill.snp.makeConstraints {
+      $0.trailing.equalTo(composer).offset(-8)
+      $0.bottom.equalTo(composer.snp.top).offset(-6)
+      $0.height.equalTo(24)
+    }
+    balanceIcon.snp.makeConstraints {
+      $0.leading.equalToSuperview().offset(7)
+      $0.centerY.equalToSuperview()
+      $0.width.height.equalTo(14)
+    }
+    composerCoinLabel.snp.makeConstraints {
+      $0.leading.equalTo(balanceIcon.snp.trailing).offset(4)
+      $0.trailing.equalToSuperview().offset(-8)
+      $0.centerY.equalToSuperview()
     }
     field.snp.makeConstraints {
       $0.leading.equalToSuperview().offset(22)
@@ -1096,7 +1137,7 @@ final class AIChatController: UIViewController, UITextFieldDelegate {
       $0.width.height.equalTo(38)
     }
     messagesScrollView.snp.makeConstraints {
-      $0.bottom.equalTo(composer.snp.top).offset(-16)
+      $0.bottom.equalTo(balancePill.snp.top).offset(-8)
     }
   }
 
@@ -1105,6 +1146,7 @@ final class AIChatController: UIViewController, UITextFieldDelegate {
     statusLabel.text =
       "\(repository.wallet.freeQuestions) Free\nQuestions\nRemaining\nAfter That: \(repository.aiMessageCost) Coins\nPer Question"
     coinLabel.text = "\(repository.wallet.coins.formatted()) Coins"
+    composerCoinLabel.text = "\(repository.wallet.coins.formatted()) Coins"
     for view in messagesStack.arrangedSubviews { view.removeFromSuperview() }
     for message in repository.aiMessagesForCurrentUser() {
       let row = UIView()
@@ -1141,22 +1183,27 @@ final class AIChatController: UIViewController, UITextFieldDelegate {
       && AppRepository.shared.wallet.coins < AppRepository.shared.aiMessageCost
     {
       presentBottomSheet(
-        title: "Not Enough Coins", message: "Coins are insufficient. Please recharge first.",
-        primary: "OK", secondary: nil
-      ) { _ in }
-    } else if AppRepository.shared.wallet.freeQuestions == 0 {
+        title: "Not Enough Coins",
+        message: "You don’t have enough Coins to continue. Would you like to recharge now?",
+        primary: "Recharge", secondary: "Cancel"
+      ) { [weak self] confirmed in
+        guard confirmed else { return }
+        self?.navigationController?.pushViewController(RechargeController(), animated: true)
+      }
+    } else if AppRepository.shared.wallet.freeQuestions == 0
+      && !AppRepository.shared.hasConfirmedPaidAIUse
+    {
       presentBottomSheet(
         title: "Continue with AI Chat",
-        message: "Continuing will cost \(AppRepository.shared.aiMessageCost) coins per message."
-      ) { ok in
-        if ok {
-          _ = AppRepository.shared.consumeAIQuestion(text: text)
-          self.field.text = ""
-        }
+        message: "Continuing will cost \(AppRepository.shared.aiMessageCost) coins per message.",
+        primary: "Confirm", secondary: "Cancel"
+      ) { [weak self] confirmed in
+        guard confirmed else { return }
+        AppRepository.shared.markPaidAIUseConfirmed()
+        if AppRepository.shared.consumeAIQuestion(text: text) { self?.field.text = "" }
       }
     } else {
-      _ = AppRepository.shared.consumeAIQuestion(text: text)
-      field.text = ""
+      if AppRepository.shared.consumeAIQuestion(text: text) { field.text = "" }
     }
   }
 

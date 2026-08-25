@@ -151,7 +151,7 @@ private final class SettingsRowButton: UIControl {
     let label = UIFactory.label(title, size: 15, color: color)
     addSubview(label)
     label.snp.makeConstraints {
-      $0.leading.equalToSuperview().offset(showsChevron ? 16 : 0)
+      $0.leading.equalToSuperview().offset(16)
       $0.centerY.equalToSuperview()
     }
     if showsChevron {
@@ -241,14 +241,14 @@ final class SettingsController: UIViewController {
       $0.height.equalTo(52)
     }
     logout.snp.makeConstraints {
-      $0.top.equalTo(blacklist.snp.bottom).offset(1)
+      $0.top.equalTo(blacklist.snp.bottom)
       $0.leading.trailing.equalTo(privacy)
-      $0.height.equalTo(36)
+      $0.height.equalTo(52)
     }
     delete.snp.makeConstraints {
-      $0.top.equalTo(logout.snp.bottom).offset(1)
+      $0.top.equalTo(logout.snp.bottom)
       $0.leading.trailing.equalTo(privacy)
-      $0.height.equalTo(36)
+      $0.height.equalTo(52)
     }
   }
 
