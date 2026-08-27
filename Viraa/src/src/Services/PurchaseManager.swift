@@ -1,8 +1,10 @@
 import Foundation
 @preconcurrency import StoreKit
 
+@MainActor
 protocol PurchaseManagerDelegate: AnyObject { func purchaseManagerDidUpdateProducts(_ products: [PurchaseDisplayProduct]); func purchaseManagerLoading(_ loading: Bool); func purchaseManagerDidPurchase(reward: Int); func purchaseManagerDidFail(_ message: String) }
 
+@MainActor
 final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate, @preconcurrency SKPaymentTransactionObserver {
     static let shared = PurchaseManager()
     weak var delegate: PurchaseManagerDelegate?
@@ -28,7 +30,6 @@ final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate
       Dictionary(uniqueKeysWithValues: configurations.map { ($0.productID, $0) })
     }
     private override init() { super.init(); SKPaymentQueue.default().add(self) }
-    deinit { SKPaymentQueue.default().remove(self) }
 
     func loadProducts() {
       requestTimeout?.cancel()
@@ -44,23 +45,25 @@ final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate
 
       // StoreKit may not call back when the simulator has no StoreKit configuration or network.
       let timeout = DispatchWorkItem { [weak self] in
-        guard let self, self.requestGeneration == generation else { return }
-        self.request = nil
-        self.delegate?.purchaseManagerLoading(false)
-        self.delegate?.purchaseManagerDidUpdateProducts([])
-        self.delegate?.purchaseManagerDidFail("Coin packs are temporarily unavailable. Please try again.")
+        // DispatchWorkItem is not actor-isolated even when scheduled on the main
+        // queue, so perform the timeout state transition through MainActor too.
+        Task { @MainActor [weak self] in
+          guard let self, self.requestGeneration == generation else { return }
+          self.request = nil
+          self.delegate?.purchaseManagerLoading(false)
+          self.delegate?.purchaseManagerDidUpdateProducts([])
+          self.delegate?.purchaseManagerDidFail("Coin packs are temporarily unavailable. Please try again.")
+        }
       }
       requestTimeout = timeout
       DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: timeout)
     }
-    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-      guard Thread.isMainThread else {
-        DispatchQueue.main.async { [weak self] in
-          self?.handleProductsResponse(request, response: response)
-        }
-        return
+    nonisolated func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+      // StoreKit invokes this delegate on its own queue. Never touch actor-isolated
+      // state from that callback; hop explicitly to MainActor before handling it.
+      Task { @MainActor [weak self] in
+        self?.handleProductsResponse(request, response: response)
       }
-      handleProductsResponse(request, response: response)
     }
     private func handleProductsResponse(
       _ request: SKProductsRequest, response: SKProductsResponse
@@ -79,14 +82,10 @@ final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate
       delegate?.purchaseManagerLoading(false)
       delegate?.purchaseManagerDidUpdateProducts(display)
     }
-    func request(_ request: SKRequest, didFailWithError error: Error) {
-      guard Thread.isMainThread else {
-        DispatchQueue.main.async { [weak self] in
-          self?.handleProductsFailure(request)
-        }
-        return
+    nonisolated func request(_ request: SKRequest, didFailWithError error: Error) {
+      Task { @MainActor [weak self] in
+        self?.handleProductsFailure(request)
       }
-      handleProductsFailure(request)
     }
     private func handleProductsFailure(_ request: SKRequest) {
       guard request === self.request else { return }
@@ -97,14 +96,10 @@ final class PurchaseManager: NSObject, @preconcurrency SKProductsRequestDelegate
       delegate?.purchaseManagerDidFail("Products are unavailable. Please try again.")
     }
     func buy(productID: String) { guard let product = storeProducts[productID], rewards[productID] != nil, SKPaymentQueue.canMakePayments(), let userID = AppRepository.shared.currentUserID else { delegate?.purchaseManagerDidFail("This product is unavailable."); return }; let payment = SKMutablePayment(product: product); payment.applicationUsername = userID; delegate?.purchaseManagerLoading(true); SKPaymentQueue.default().add(payment) }
-    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
-        guard Thread.isMainThread else {
-          DispatchQueue.main.async { [weak self] in
-            self?.handleTransactions(queue, transactions: transactions)
-          }
-          return
+    nonisolated func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        Task { @MainActor [weak self] in
+          self?.handleTransactions(queue, transactions: transactions)
         }
-        handleTransactions(queue, transactions: transactions)
     }
     private func handleTransactions(
       _ queue: SKPaymentQueue, transactions: [SKPaymentTransaction]
